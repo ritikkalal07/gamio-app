@@ -95,7 +95,7 @@ img {
 }
 
 .section {
-    padding: 5rem 0;
+    padding: 2rem 0;
 }
 
 .section__title {
@@ -146,11 +146,11 @@ img {
 /*=============== HEADER & NAV ===============*/
 .header {
     width: 100%;
-    position: fixed;
+    position: sticky;
     top: 0;
     left: 0;
     z-index: 100;
-    background-color: transparent;
+    background-color: #FFFFFF;
     transition: background-color 0.4s, box-shadow 0.4s;
 }
 

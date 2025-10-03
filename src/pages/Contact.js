@@ -1,23 +1,84 @@
-import React from "react";
+import React, { useState } from "react";
+import axios from "axios";
 
-function Contact()
-{
-    return(
-          <main>
-        <section className="section container">
-            <div className="page__header">
+function Contact() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // API call to backend
+      await axios.post("http://localhost:5000/api/contact", formData);
+      alert("Message sent successfully!");
+      setFormData({ name: "", email: "", message: "" });
+    } catch (error) {
+      console.error("Error submitting form", error);
+      alert("Something went wrong!");
+    }
+  };
+
+  return (
+            <main>
+            <section className="section container">
+                <div className="page__header">
                 <h1 className="page__title">Get In Touch</h1>
-                <p className="page__subtitle">We'd love to hear from you. Send us a message!</p>
-            </div>
-            <div className="contact__layout">
+                <p className="page__subtitle">
+                    We'd love to hear from you. Send us a message!
+                </p>
+                </div>
+                <div className="contact__layout">
                 <div className="contact__form-container">
-                    <form>
-                        <div className="form__group"><label for="contact-name">Name</label><input type="text" id="contact-name" className="form__input" required/></div>
-                        <div className="form__group"><label for="contact-email">Email</label><input type="email" id="contact-email" className="form__input" required/></div>
-                        <div className="form__group"><label for="contact-message">Message</label><textarea id="contact-message" className="form__input" rows="5" required></textarea></div>
-                        <button type="submit" className="btn btn--primary">Send Message</button>
+                    <form onSubmit={handleSubmit}>
+                    <div className="form__group">
+                        <label htmlFor="name">Name</label>
+                        <input
+                        type="text"
+                        id="name"
+                        className="form__input"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                        />
+                    </div>
+
+                    <div className="form__group">
+                        <label htmlFor="email">Email</label>
+                        <input
+                        type="email"
+                        id="email"
+                        className="form__input"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        />
+                    </div>
+
+                    <div className="form__group">
+                        <label htmlFor="message">Message</label>
+                        <textarea
+                        id="message"
+                        className="form__input"
+                        rows="5"
+                        value={formData.message}
+                        onChange={handleChange}
+                        required
+                        ></textarea>
+                    </div>
+
+                    <button type="submit" className="btn btn--primary">
+                        Send Message
+                    </button>
                     </form>
                 </div>
+   
                 <div className="contact__info">
                     <h3>Contact Information</h3>
                     <p>Reach out to us directly or visit our office.</p>
