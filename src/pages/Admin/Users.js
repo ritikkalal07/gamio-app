@@ -79,7 +79,7 @@ function Users() {
   return (
     <main className="main-content">
       <header className="main-header">
-        <h1>Manage Users</h1>
+        <h1>👤 Manage Users</h1>
       </header>
 
       {editingUserId && (

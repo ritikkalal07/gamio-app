@@ -47,7 +47,7 @@ function Admin_Feedback() {
   return (
     <main className="main-content">
       <header className="main-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1>Contact Messages</h1>
+        <h1>💬 Manage Feedback</h1>
         <button className="btn btn-primary" onClick={downloadCSV}>
           Download CSV
         </button>

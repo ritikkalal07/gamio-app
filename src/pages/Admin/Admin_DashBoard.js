@@ -38,7 +38,7 @@ function Admin_DashBoard() {
   return (
     <main className="main-content">
       <header className="main-header">
-        <h1>Dashboard</h1>
+        <h1>📊 Dashboard</h1>
         <div className="header-actions">
           <span>Welcome, Admin!</span>
         </div>

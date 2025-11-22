@@ -49,7 +49,7 @@ function GamesList() {
   return (
     <main className="main-content">
       <header className="main-header">
-        <h1>Manage Games</h1>
+        <h1>🎮Manage Games</h1>
         <button
           className="btn btn-primary"
           onClick={() => navigate("/admin/addgame")}

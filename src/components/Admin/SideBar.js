@@ -47,22 +47,38 @@ function SideBar() {
             </li>
             <li>
               <Link to="/admin/gameslist">
-                <i className="fas fa-users"></i> Games List
+                <i className="fa fa-list"></i> Manage Games
+              </Link>
+            </li>
+            <li>
+              <Link to="/admin/AdminSlotsPage">
+                <i className="fa fa-calendar"></i> Manage Slots
+              </Link>
+            </li>
+              <li>
+              <Link to="/admin/bulkupload">
+                <i className="fas fa-upload"></i> Manage BulkUpload
               </Link>
             </li>
             <li>
               <Link to="/admin/bookings">
-                <i className="fas fa-calendar-check"></i> Bookings
+                <i className="fas fa-calendar-check"></i> Manage Bookings
               </Link>
             </li>
+          <li>
+            <Link to="/admin/payments">
+              <i className="fas fa-credit-card"></i> Manage Payments
+            </Link>
+          </li>
+
             <li>
               <Link to="/admin/users">
-                <i className="fas fa-users"></i> Users
+                <i className="fas fa-users"></i> Manage Users
               </Link>
             </li>
              <li>
               <Link to="/admin/adminfeedback">
-                <i className="fas fa-users"></i> FeedBack
+                <i className="fas fa-comment"></i>Manage FeedBack
               </Link>
             </li>
           </ul>

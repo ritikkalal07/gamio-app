@@ -126,7 +126,7 @@ function Sport() {
                     </div>
                     <p>{game.description}</p>
                     {/* <button className="btn btn--secondary">Book Now</button> */}
-                     <Link to={`/venue/${game._id}`} className="btn btn--secondary">
+                     <Link to={`/venue/${game._id}`} className="btn btn--primary">
                       Book Now
                     </Link>
                   </div>

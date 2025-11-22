@@ -22,24 +22,30 @@ function Login() {
 
       const { token, user } = res.data;
 
-      // Store token + role info
-      localStorage.setItem("token", token);
-      localStorage.setItem("loggedIn", "true");
-      localStorage.setItem("username", user.username || user.name || "User");
-      localStorage.setItem("user_type", user.user_type || "user");
+      if (token && user) {
+        // ✅ Store token + user info
+        localStorage.setItem("token", token);
+        localStorage.setItem("loggedIn", "true");
+        localStorage.setItem("username", user.username || user.name || "User");
+        localStorage.setItem("user_type", user.user_type || "user");
+        localStorage.setItem("email", user.email || "");
 
-      setMessage("Login successful!");
+        setMessage("Login successful!");
 
-      // Redirect based on role
-      setTimeout(() => {
-        if (user.user_type === "admin") {
-          navigate("/admin"); 
-        } else {
-          navigate("/"); 
-        }
-      }, 800);
+        // ✅ Redirect based on role
+        setTimeout(() => {
+          if (user.user_type === "admin") {
+            navigate("/admin");
+          } else {
+            navigate("/");
+          }
+        }, 800);
+      } else {
+        setMessage("Invalid response from server. Please try again.");
+      }
     } catch (err) {
-      setMessage(err.response?.data?.message || "Login failed");
+      console.error("Login error:", err);
+      setMessage(err.response?.data?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }

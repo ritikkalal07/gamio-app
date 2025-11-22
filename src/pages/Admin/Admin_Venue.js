@@ -5,7 +5,7 @@ function Admin_Venue()
     return(
         <main className="main-content">
     <header className="main-header">
-        <h1>Manage Venues</h1>
+        <h1>📘Manage Venues</h1>
         <button className="btn btn-primary" id="add-venue-btn">Add New Venue</button>
     </header>
 
