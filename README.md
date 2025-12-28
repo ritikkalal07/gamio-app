@@ -1,66 +1,176 @@
-# Getting Started with Create React App
+---
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# 🎮 Gamio — MERN Stack Venue Booking Platform
 
-## Available Scripts
+Gamio is a **full-stack MERN application** designed to automate the process of booking sports venues and game zones.
+It provides a seamless experience for users to browse venues, book available slots, make secure payments, and receive digital tickets, while giving admins powerful tools to manage venues and bookings efficiently.
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## 🚀 Project Overview
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Traditional venue booking is often manual and time-consuming. Gamio solves this problem by providing an **end-to-end online booking system** with real-time availability, payment integration, and automated ticket generation.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The project is built using the **MERN stack (MongoDB, Express, React, Node.js)** and follows the **MVC architecture** on the backend for clean and maintainable code.
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🧩 Key Features
 
-### `npm run build`
+### 👤 User Features
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+* Browse available venues and game zones
+* View venue details and available time slots
+* Book venues by selecting date, time, and price
+* Secure online payment using **PayPal**
+* Automatic **PDF ticket generation** after successful booking
+* Clean, responsive UI optimized for mobile users
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 🛠 Admin Features
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+* Add, update, and delete venues
+* Manage time slots and pricing
+* Bulk upload venues or slots using **CSV/XLSX files**
+* View and manage all bookings
+* User-friendly admin dashboard
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🏗 Architecture (MVC Pattern)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Gamio’s backend strictly follows the **MVC (Model–View–Controller)** pattern:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### **Model**
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+* Defined using **Mongoose schemas**
+* Handles database structure for Users, Venues, and Bookings
 
-## Learn More
+### **View**
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+* Implemented using **React**
+* Displays UI, forms, venue listings, and booking pages
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### **Controller**
 
-### Code Splitting
+* Handles business logic
+* Processes requests, communicates with models, and sends responses
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+This separation ensures scalability, maintainability, and cleaner code.
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 🛠 Tech Stack
 
-### Making a Progressive Web App
+### Frontend
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+* React.js
+* React Router
+* Axios
+* CSS / Tailwind / Custom UI
+* SweetAlert2 for notifications
 
-### Advanced Configuration
+### Backend
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+* Node.js
+* Express.js
+* MongoDB
+* Mongoose
+* Multer (file uploads)
+* CSV-Parser / XLSX (bulk uploads)
+* PayPal SDK
+* PDF generation libraries
 
-### `npm run build` fails to minify
+### Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+* Frontend hosted on **Vercel**
+* Backend currently runs locally (deployment planned on Render/Heroku)
+* MongoDB Atlas for database
+
+---
+
+## 🔄 Application Flow
+
+1. User visits the Gamio website
+2. React frontend fetches venue data using Axios
+3. User selects a venue and time slot
+4. Booking details are sent to Express backend
+5. Backend validates and stores booking in MongoDB
+6. PayPal payment is initiated and verified
+7. Booking status is updated to “Paid”
+8. Backend generates a **PDF ticket**
+9. User downloads the ticket instantly
+
+---
+
+
+## ⚙ Environment Variables
+
+Create a `.env` file inside the backend directory and add:
+
+```
+MONGO_URI=your_mongodb_connection_string
+PORT=5000
+PAYPAL_CLIENT_ID=your_paypal_client_id
+PAYPAL_SECRET=your_paypal_secret
+```
+
+---
+
+## ▶ How to Run the Project Locally
+
+### Backend
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+---
+
+## 🚧 Deployment Status
+
+* ✅ Frontend is successfully deployed on **Vercel**
+* ⚠ Backend works locally but faces limitations on Vercel due to:
+
+  * Serverless function restrictions
+  * File upload handling
+  * PDF generation
+  * PayPal verification requiring a persistent server
+
+The backend will be deployed on **Render or Heroku** for full functionality in the next phase.
+
+---
+
+## 🔮 Future Enhancements
+
+* Email ticket delivery
+* Role-based authentication using JWT
+* Real-time slot availability
+* Improved admin analytics
+* Cloud storage for file uploads
+
+---
+
+## 👨‍💻 Author
+
+**Ritik Kalal**
+MERN Stack Developer
+GitHub: [https://github.com/ritikkalal07](https://github.com/ritikkal07)
+
+---
+
+
+* Add **badges** (MERN, Vercel, MongoDB)
+* Optimize README for **recruiters**
+* Shorten it for **hackathon submission**
+
+Just tell me 👍
