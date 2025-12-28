@@ -23,7 +23,7 @@ function Login() {
       const { token, user } = res.data;
 
       if (token && user) {
-        // ✅ Store token + user info
+        // Store token + user info
         localStorage.setItem("token", token);
         localStorage.setItem("loggedIn", "true");
         localStorage.setItem("username", user.username || user.name || "User");
@@ -32,7 +32,7 @@ function Login() {
 
         setMessage("Login successful!");
 
-        // ✅ Redirect based on role
+        // Redirect based on role
         setTimeout(() => {
           if (user.user_type === "admin") {
             navigate("/admin");

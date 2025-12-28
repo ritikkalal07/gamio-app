@@ -12,11 +12,10 @@ router.get('/', getGames);
 router.post('/', createGame);
 router.put('/:id', updateGame);
 router.delete('/:id', deleteGame);
-router.get('/:id', getGameById); // dd this new route
+router.get('/:id', getGameById); 
 
 const upload = multer({ dest: "uploads/" });
 
-// Helper function for validation
 function validateGame(game) {
   const requiredFields = ["name", "place", "price", "players"];
   for (let field of requiredFields) {
@@ -30,7 +29,6 @@ function validateGame(game) {
   return null;
 }
 
-// Bulk upload route
 router.post("/bulk-upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -41,7 +39,6 @@ router.post("/bulk-upload", upload.single("file"), async (req, res) => {
     const fileExt = req.file.originalname.split(".").pop().toLowerCase();
     let gamesData = [];
 
-    //  PARSE FILE 
     if (fileExt === "csv") {
       const fileContent = [];
       fs.createReadStream(filePath)

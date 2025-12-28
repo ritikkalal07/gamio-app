@@ -18,9 +18,9 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-/* ------------------------------------
-   📌 USER BOOK SLOT
------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* USER BOOK SLOT                              */
+/* -------------------------------------------------------------------------- */
 router.post("/book", protect, async (req, res) => {
   try {
     const {
@@ -32,7 +32,6 @@ router.post("/book", protect, async (req, res) => {
       people,
       price,
     } = req.body;
-
 
     if (!venueId || !date || !time || !email) {
       return res.status(400).json({
@@ -83,49 +82,201 @@ router.post("/book", protect, async (req, res) => {
       { isBooked: true }
     );
 
-    // ------------------------------
-    //  PDF Ticket Generation
-    // ------------------------------
+    // ---------------------------------------------------------
+    //  PROFESSIONAL PDF TICKET GENERATION
+    // ---------------------------------------------------------
 
     const ticketsDir = path.join(__dirname, "../tickets");
     if (!fs.existsSync(ticketsDir)) fs.mkdirSync(ticketsDir);
 
     const pdfPath = path.join(ticketsDir, `ticket-${booking._id}.pdf`);
-    const doc = new PDFDocument({ margin: 40 });
 
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
     doc.pipe(fs.createWriteStream(pdfPath));
 
-    // HEADER
+    // --- DESIGN CONSTANTS ---
+    const primaryColor = "#4ECDC4"; // Gamio Brand Color
+    const secondaryColor = "#444444";
+    const lightGray = "#f4f4f4";
+    const lineGrey = "#aaaaaa";
+
+    // --- HELPER FUNCTIONS ---
+    function generateHr(doc, y) {
+      doc
+        .strokeColor(lightGray)
+        .lineWidth(1)
+        .moveTo(50, y)
+        .lineTo(550, y)
+        .stroke();
+    }
+
+    function formatCurrency(amount) {
+      return "₹" + amount.toFixed(2);
+    }
+
+    // 1. HEADER SECTION
+
+    // Brand Logo/Text (Left)
     doc
+      .fillColor(primaryColor)
       .fontSize(28)
-      .fillColor("#2563eb")
-      .text("🎟️ Gamio - Official Game Ticket", { align: "center" });
-    doc.moveDown();
+      .font("Helvetica-Bold")
+      .text("GAMIO", 50, 45)
+      .fontSize(10)
+      .text("Sports Booking Platform", 50, 75)
+      .text("support@gamio.com", 50, 90)
+      .moveDown();
 
-    // SEPARATOR
-    doc.moveTo(40, doc.y).lineTo(570, doc.y).strokeColor("#2563eb").stroke();
-    doc.moveDown();
+    // Ticket Info (Right)
+    doc
+      .fillColor(secondaryColor)
+      .fontSize(10)
+      .font("Helvetica-Bold")
+      .text("TICKET ID:", 400, 50)
+      .font("Helvetica")
+      .text(booking._id.toString().toUpperCase().slice(-8), 400, 65) // Showing last 8 chars
+      .font("Helvetica-Bold")
+      .text("BOOKING DATE:", 400, 85)
+      .font("Helvetica")
+      .text(new Date().toLocaleDateString(), 400, 100)
+      .moveDown();
 
-    // BOOKING INFO
-    doc.fontSize(16).fillColor("black").text("Booking Details:", { underline: true });
-    doc.moveDown(0.5);
+    generateHr(doc, 130);
 
-    doc.fontSize(14);
-    doc.text(`Name: ${username}`);
-    doc.text(`Email: ${email}`);
-    doc.text(`Game: ${game.name}`);
-    doc.text(`Date: ${date}`);
-    doc.text(`Time: ${time}`);
-    doc.text(`Players: ${people}`);
-    doc.text(`Total Price: ₹${price * people}`);
+    // 2. CUSTOMER & EVENT DETAILS (2 Columns)
+    const customerTop = 150;
 
-    doc.moveDown();
-    doc.text("Thank you for booking with Gamio!", {
-      align: "center",
-      color: "#2563eb",
-    });
+    doc
+      .fillColor(secondaryColor)
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("Billed To:", 50, customerTop);
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text(username, 50, customerTop + 20)
+      .text(email, 50, customerTop + 35)
+      .moveDown();
+
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("Session Details:", 300, customerTop);
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text(`Date: ${date}`, 300, customerTop + 20)
+      .text(`Time: ${time}`, 300, customerTop + 35)
+      .moveDown();
+
+
+    // 3. BOOKING TABLE
+    const tableTop = 240;
+    const itemCodeX = 50;
+    const descX = 100; // Description
+    const quantityX = 330; // Players
+    const priceX = 400; // Price
+    const amountX = 480; // Total
+
+    // Table Header Background
+    doc
+      .rect(50, tableTop, 500, 25)
+      .fill(primaryColor)
+      .stroke();
+
+    // Table Header Text
+    doc
+      .fontSize(10)
+      .fillColor("#fff")
+      .font("Helvetica-Bold")
+      .text("#", itemCodeX + 5, tableTop + 8)
+      .text("Game Description", descX, tableTop + 8)
+      .text("Players", quantityX, tableTop + 8)
+      .text("Price/Person", priceX, tableTop + 8)
+      .text("Total", amountX, tableTop + 8);
+
+    // Table Row (The Booking)
+    const rowY = tableTop + 35;
+    const lineTotal = price * people;
+
+    doc
+      .fontSize(10)
+      .fillColor(secondaryColor)
+      .font("Helvetica")
+      .text("1", itemCodeX + 5, rowY)
+      .text(game.name, descX, rowY)
+      .text(people.toString(), quantityX, rowY)
+      .text(formatCurrency(price), priceX, rowY)
+      .font("Helvetica-Bold")
+      .text(formatCurrency(lineTotal), amountX, rowY);
+
+    // Line under the row
+    generateHr(doc, rowY + 20);
+
+
+    // 4. TOTALS SECTION
+    const subtotalY = rowY + 40;
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("Subtotal", 400, subtotalY)
+      .text(formatCurrency(lineTotal), 480, subtotalY);
+
+    doc
+      .fontSize(10)
+      .text("Tax (0%)", 400, subtotalY + 15)
+      .text("₹0.00", 480, subtotalY + 15);
+
+    generateHr(doc, subtotalY + 30);
+
+    // Grand Total
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .fillColor(primaryColor)
+      .text("Grand Total", 400, subtotalY + 45)
+      .text(formatCurrency(lineTotal), 480, subtotalY + 45);
+
+
+    // 5. FOOTER & QR PLACEHOLDER
+    const footerTop = 650;
+
+    // Optional: Placeholder box for QR Code or Barcode
+    doc
+      .roundedRect(50, footerTop, 50, 50, 2)
+      .strokeColor(lineGrey)
+      .stroke();
+    doc
+      .fontSize(8)
+      .fillColor(lineGrey)
+      .text("QR", 68, footerTop + 20);
+
+    // Terms
+    doc
+      .fontSize(10)
+      .fillColor(secondaryColor)
+      .font("Helvetica-Bold")
+      .text("Important Instructions:", 120, footerTop)
+      .font("Helvetica")
+      .fontSize(8)
+      .text("1. Please arrive 15 minutes before your scheduled slot.", 120, footerTop + 15)
+      .text("2. Show this ticket at the venue counter for entry.", 120, footerTop + 28)
+      .text("3. Cancellations are subject to venue policy.", 120, footerTop + 41);
+
+    // Bottom Copyright
+    doc
+      .fontSize(8)
+      .fillColor(lineGrey)
+      .text(`© ${new Date().getFullYear()} Gamio. All Rights Reserved.`, 50, 750, { align: "center", width: 500 });
 
     doc.end();
+
+    // ---------------------------------------------------------
+    //  EMAIL GENERATION
+    // ---------------------------------------------------------
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
@@ -222,155 +373,55 @@ router.post("/book", protect, async (req, res) => {
 });
 
 
-// router.post("/book", protect, async (req, res) => {
-//   try {
-//     const {
-//       username,
-//       email,
-//       venueId,     // FIXED field name
-//       date,
-//       time,
-//       people,
-//       price,
-//     } = req.body;
-
-//     if (!venueId || !date || !time || !email) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "All fields are required.",
-//       });
-//     }
-
-//     // Check if already booked
-//     const existing = await Booking.findOne({
-//       venueId,
-//       date,
-//       time,
-//       status: { $in: ["Pending", "Confirmed"] },
-//     });
-
-//     if (existing) {
-//       return res.status(409).json({
-//         success: false,
-//         message: "This slot is already booked.",
-//       });
-//     }
-
-//     const game = await Game.findById(venueId);
-//     if (!game)
-//       return res.status(404).json({
-//         success: false,
-//         message: "Game not found.",
-//       });
-
-//     const booking = await Booking.create({
-//       username,
-//       email,
-//       venueId,
-//       date,
-//       time,
-//       people,
-//       price,
-//       status: "Confirmed",
-//     });
-
-//     // Mark slot as booked
-//     await Slot.findOneAndUpdate(
-//       { venueId, date, startTime: time },
-//       { isBooked: true }
-//     );
-
-//     // Create ticket PDF
-//     const ticketsDir = path.join(__dirname, "../tickets");
-//     if (!fs.existsSync(ticketsDir)) fs.mkdirSync(ticketsDir);
-
-//     const pdfPath = path.join(ticketsDir, `ticket-${booking._id}.pdf`);
-//     const doc = new PDFDocument();
-//     doc.pipe(fs.createWriteStream(pdfPath));
-
-//     doc.fontSize(22).fillColor("#2563eb").text("🎟️ Gamio Ticket", {
-//       align: "center",
-//     });
-//     doc.moveDown();
-//     doc.fontSize(14).fillColor("black");
-//     doc.text(`Name: ${username}`);
-//     doc.text(`Email: ${email}`);
-//     doc.text(`Game: ${game.name}`);
-//     doc.text(`Date: ${date}`);
-//     doc.text(`Time: ${time}`);
-//     doc.text(`People: ${people}`);
-//     doc.text(`Total Price: ₹${price * people}`);
-//     doc.end();
-
-//     // Send Email
-//     await transporter.sendMail({
-//       from: process.env.EMAIL_USER,
-//       to: email,
-//       subject: `🎉 Booking Confirmed for ${game.name}`,
-//       html: `
-//           <h2>Your Booking is Confirmed!</h2>
-//           <p>Game: ${game.name}</p>
-//           <p>Date: ${date}</p>
-//           <p>Time: ${time}</p>
-//           <a href="http://localhost:5000/tickets/ticket-${booking._id}.pdf">
-//             Download Ticket
-//           </a>
-//         `,
-//       attachments: [
-//         { filename: "Gamio-Ticket.pdf", path: pdfPath }
-//       ],
-//     });
-
-//     res.json({
-//       success: true,
-//       message: "Booking Confirmed!",
-//       booking,
-//     });
-//   } catch (err) {
-//     console.error("BOOKING ERROR:", err);
-//     res.status(500).json({
-//       success: false,
-//       message: "Error processing booking.",
-//     });
-//   }
-// });
-
-/* ------------------------------------
-   📌 GET USER BOOKINGS
------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* 📌 GET USER BOOKINGS                              */
+/* -------------------------------------------------------------------------- */
 router.get("/", protect, async (req, res) => {
   try {
-    const bookings = await Booking.find({ email: req.user.email }).populate(
-      "venueId"
-    );
+    // ✅ CRASH FIX: Check if req.user exists before accessing property
+    if (!req.user || !req.user.email) {
+      console.error("GET Bookings: req.user or req.user.email is missing");
+      return res.status(401).json({ 
+        success: false, 
+        message: "User not identified in token." 
+      });
+    }
+
+    // ✅ Find bookings by email
+    const bookings = await Booking.find({ email: req.user.email })
+      .populate("venueId")
+      .sort({ date: -1 });
 
     res.json({ success: true, bookings });
+
   } catch (err) {
-    console.error("Fetch Error:", err);
+    console.error("Fetch Bookings Error:", err);
     res.status(500).json({
       success: false,
-      message: "Error fetching bookings.",
+      message: "Error fetching bookings from server.",
+      error: err.message
     });
   }
 });
 
-/* ------------------------------------
-   ❌ CANCEL BOOKING
------------------------------------- */
+
+/* -------------------------------------------------------------------------- */
+/* ❌ CANCEL BOOKING                               */
+/* -------------------------------------------------------------------------- */
 router.delete("/:id", protect, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id).populate("venueId");
 
-    if (!booking)
-      return res
-        .status(404)
-        .json({ success: false, message: "Booking not found." });
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found." });
+    }
 
-    if (booking.email !== req.user.email)
+    if (booking.email !== req.user.email) {
       return res.status(403).json({
         success: false,
         message: "Not authorized.",
       });
+    }
 
     booking.status = "Cancelled";
     await booking.save();
@@ -390,9 +441,9 @@ router.delete("/:id", protect, async (req, res) => {
   }
 });
 
-/* ------------------------------------
-   🧹 AUTO DELETE OLD BOOKINGS
------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* 🧹 AUTO DELETE OLD BOOKINGS                         */
+/* -------------------------------------------------------------------------- */
 setInterval(async () => {
   try {
     const today = new Date().toISOString().split("T")[0];
@@ -403,9 +454,9 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000);
 
-/* ------------------------------------
-   📌 ADMIN — GET ALL BOOKINGS
------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* 📌 ADMIN — GET ALL BOOKINGS                        */
+/* -------------------------------------------------------------------------- */
 router.get("/all", async (req, res) => {
   try {
     const bookings = await Booking.find()

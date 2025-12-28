@@ -27,7 +27,6 @@ import BulkUpload from './pages/Admin/BulkUpload';
 import PaymentPage from "./pages/PaymentPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 
-// import ManageProfile from './pages/ManageProfile';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -66,7 +65,6 @@ function App() {
   return (
     <div className="app-container">
       <Routes>
-        {/* ---------------- USER SIDE ROUTES ---------------- */}
         <Route element={<UserLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/sport" element={<Sport />} />
@@ -88,7 +86,6 @@ function App() {
           <Route path="/payment-success" element={<PaymentSuccess />} />
         </Route>
 
-        {/* ---------------- ADMIN SIDE ROUTES ---------------- */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Admin_DashBoard />} />
           <Route path="dashboard" element={<Admin_DashBoard />} />

@@ -6,7 +6,7 @@ function MyBookings() {
   const [expanded, setExpanded] = useState(null); // which booking is expanded
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [cancelPopup, setCancelPopup] = useState({ visible: false, bookingId: null }); // popup state
+  const [cancelPopup, setCancelPopup] = useState({ visible: false, bookingId: null });
 
   // ✅ Fetch bookings for logged-in user
   useEffect(() => {
@@ -29,7 +29,7 @@ function MyBookings() {
           setError("Failed to load bookings. Please try again.");
         }
       } catch (err) {
-        console.error(err);
+        console.error("Fetch bookings error:", err);
         setError("Unable to fetch bookings. Try again later.");
       } finally {
         setLoading(false);
@@ -54,43 +54,45 @@ function MyBookings() {
     setCancelPopup({ visible: false, bookingId: null });
   };
 
-  // ✅ Confirm cancel
- // confirmCancel inside MyBookings component
-const confirmCancel = async () => {
-  const bookingId = cancelPopup.bookingId;
-  if (!bookingId) return closeCancelPopup();
+  // ✅ Confirm cancel logic
+  const confirmCancel = async () => {
+    const bookingId = cancelPopup.bookingId;
+    if (!bookingId) return closeCancelPopup();
 
-  try {
-    const token = localStorage.getItem("token");
-    const res = await axios.delete(`http://localhost:5000/api/bookings/${bookingId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.delete(`http://localhost:5000/api/bookings/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (res.data.success) {
-      // remove locally
-      setBookings((prev) => prev.filter((b) => b._id !== bookingId));
-      // show success toast/message
-      alert(res.data.message || "Booking cancelled successfully.");
-    } else {
-      alert(res.data.message || "Failed to cancel booking. Try again.");
+      if (res.data.success) {
+        // Remove locally from state so UI updates instantly
+        setBookings((prev) => prev.filter((b) => b._id !== bookingId));
+        alert(res.data.message || "Booking cancelled successfully.");
+      } else {
+        alert(res.data.message || "Failed to cancel booking. Try again.");
+      }
+    } catch (error) {
+      console.error("Cancel error frontend:", error);
+      const serverMsg = error.response?.data?.message || error.message || "Something went wrong while cancelling.";
+      alert(serverMsg);
+    } finally {
+      closeCancelPopup();
     }
-  } catch (error) {
-    console.error("Cancel error frontend:", error);
-    const serverMsg = error.response?.data?.message || error.message || "Something went wrong while cancelling.";
-    alert(serverMsg);
-  } finally {
-    closeCancelPopup();
-  }
-};
-
+  };
 
   return (
     <div className="my-bookings-page" style={pageStyle}>
       <h2 style={titleStyle}>My Bookings</h2>
 
       {loading && <p style={textStyle}>Loading your bookings...</p>}
+      
       {error && <p style={{ ...textStyle, color: "red" }}>{error}</p>}
-      {!loading && bookings.length === 0 && <p style={textStyle}>No bookings found.</p>}
+      
+      {/* Only show "No bookings" if not loading AND no error AND empty list */}
+      {!loading && !error && bookings.length === 0 && (
+        <p style={textStyle}>No bookings found.</p>
+      )}
 
       <div style={cardGridStyle}>
         {bookings.map((booking) => (
@@ -100,13 +102,15 @@ const confirmCancel = async () => {
               onClick={() => toggleExpand(booking._id)}
             >
               <div>
+                {/* 🔴 FIX: Used venueId instead of venue */}
                 <h3 style={{ marginBottom: "5px", fontSize: "1.1rem" }}>
-                  {booking.venue?.name || "Booked Venue"}
+                  {booking.venueId?.name || "Booked Venue"}
                 </h3>
                 <p style={{ margin: 0, color: "#555" }}>
                   {new Date(booking.date).toLocaleDateString()} — {booking.time}
                 </p>
               </div>
+              
               <span
                 style={{
                   ...statusBadgeStyle,
@@ -124,17 +128,23 @@ const confirmCancel = async () => {
                 <p><strong>Name:</strong> {booking.username}</p>
                 <p><strong>Email:</strong> {booking.email}</p>
                 <p><strong>People:</strong> {booking.people}</p>
-                <p><strong>Location:</strong> {booking.location}</p>
+                
+                {/* 🔴 FIX: Accessed location via venueId */}
+                <p><strong>Location:</strong> {booking.venueId?.location || "N/A"}</p>
+                
                 <p><strong>Price:</strong> ₹{booking.price}</p>
                 <p><strong>Date:</strong> {new Date(booking.date).toLocaleDateString()}</p>
                 <p><strong>Time:</strong> {booking.time}</p>
 
-                <button
-                  onClick={() => openCancelPopup(booking._id)}
-                  style={cancelButtonStyle}
-                >
-                  Cancel Booking
-                </button>
+                {/* Only show Cancel button if not already cancelled */}
+                {booking.status !== "Cancelled" && (
+                  <button
+                    onClick={() => openCancelPopup(booking._id)}
+                    style={cancelButtonStyle}
+                  >
+                    Cancel Booking
+                  </button>
+                )}
               </div>
             )}
           </div>
