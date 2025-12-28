@@ -160,17 +160,23 @@ The backend will be deployed on **Render or Heroku** for full functionality in t
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Team Members
 
-**Ritik Kalal**
-MERN Stack Developer
-GitHub: [https://github.com/ritikkalal07](https://github.com/ritikkal07)
+* **Ritik Kalal** – MERN Stack Developer
+  *(Backend, Frontend, Payment Integration, PDF Generation, Overall Architecture)*
+
+* **Aryan Gayani** – **Backend Developer**
+  *(API Development, Database Management, Controllers & Routes)*
+
+* **Pradip patil** – **Frontend Developer**
+  *(UI Design, React Components, Responsiveness, User Experience)*
+
+---
+
+## 📌 Maintained By
+
+This project is collaboratively developed and maintained by the **Gamio Team**, focusing on building a scalable and real-world MERN stack booking solution.
 
 ---
 
 
-* Add **badges** (MERN, Vercel, MongoDB)
-* Optimize README for **recruiters**
-* Shorten it for **hackathon submission**
-
-Just tell me 👍
