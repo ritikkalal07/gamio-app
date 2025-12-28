@@ -5,7 +5,6 @@ const Game = require("../models/Game");
 
 /* 
    ADMIN → CREATE SLOTS  
-   POST /api/slots/admin
  */
 router.post("/admin", async (req, res) => {
   try {
@@ -148,7 +147,6 @@ router.delete("/admin/:id", async (req, res) => {
 
 /* 
    FRONTEND → GET SLOTS FOR A VENUE + DATE
-   THIS ROUTE WAS MOVED TO BOTTOM (FIX)
  */
 router.get("/:venueId", async (req, res) => {
   try {

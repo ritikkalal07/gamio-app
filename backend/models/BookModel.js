@@ -1,39 +1,83 @@
 const mongoose = require("mongoose");
 
-const bookingSchema = new mongoose.Schema(
-  {
-    username: { type: String, required: true },
-    email: { type: String, required: true },
-
-    venueId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Venue",
-      required: true,
-    },
-
-    date: { type: String, required: true },
-    time: { type: String, required: true },
-
-    price: { type: Number, required: true },
-
-    paymentStatus: {
-      type: String,
-      enum: ["Pending", "Paid", "Failed", "Refunded"],
-      default: "Pending",
-    },
-
-    transactionId: { type: String, default: null },
-
-    status: {
-      type: String,
-      enum: ["Confirmed", "Cancelled"],
-      default: "Confirmed",
-    },
+const bookingSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
   },
-  { timestamps: true }
-);
+  email: {
+    type: String,
+    required: true,
+  },
+  venueId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Game", 
+    required: true,
+  },
+  date: {
+    type: String,
+    required: true,
+  },
+  time: {
+    type: String,
+    required: true,
+  },
+  people: {
+    type: Number,
+    required: true,
+    default: 1,
+  },
+  price: {
+    type: Number,
+    required: true,
+  },
+  status: {
+    type: String,
+    default: "Confirmed",
+    enum: ["Pending", "Confirmed", "Cancelled"],
+  },
+  location: {
+    type: String,
+  }
+}, { timestamps: true });
 
 module.exports = mongoose.model("Booking", bookingSchema);
+// const mongoose = require("mongoose");
+
+// const bookingSchema = new mongoose.Schema(
+//   {
+//     username: { type: String, required: true },
+//     email: { type: String, required: true },
+
+//     venueId: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "Venue",
+//       required: true,
+//     },
+
+//     date: { type: String, required: true },
+//     time: { type: String, required: true },
+
+//     price: { type: Number, required: true },
+
+//     paymentStatus: {
+//       type: String,
+//       enum: ["Pending", "Paid", "Failed", "Refunded"],
+//       default: "Pending",
+//     },
+
+//     transactionId: { type: String, default: null },
+
+//     status: {
+//       type: String,
+//       enum: ["Confirmed", "Cancelled"],
+//       default: "Confirmed",
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// module.exports = mongoose.model("Booking", bookingSchema);
 
 
 // const mongoose = require("mongoose");

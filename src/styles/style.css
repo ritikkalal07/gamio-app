@@ -127,7 +127,7 @@ img {
 
 .btn--secondary {
     background-color: var(--secondary-color);
-    color: #333;
+    color: #fff;
 }
 .btn--secondary:hover {
     opacity: 0.8;

@@ -12,7 +12,7 @@ function Register() {
   });
 
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState("register"); // "register" → "otp"
+  const [step, setStep] = useState("register"); 
   const [message, setMessage] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +29,7 @@ function Register() {
 
     try {
       const res = await axios.post("http://localhost:5000/api/register", {
-        name: formData.fullname, // ✅ map fullname → name
+        name: formData.fullname, 
         email: formData.email,
         password: formData.password,
       });

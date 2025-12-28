@@ -8,7 +8,7 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-// ✅ Email setup
+// Email setup
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ✅ Create booking (prevents double booking + sends email)
+// Create booking (prevents double booking + sends email)
 router.post('/book', async (req, res) => {
   try {
     const { username, email, venue, date, time, location, people, price } = req.body;
@@ -53,7 +53,7 @@ router.post('/book', async (req, res) => {
     await booking.save();
     await booking.populate('venue');
 
-    // ✅ Create PDF ticket
+    // Create PDF ticket
     const pdfPath = path.join(__dirname, `../tickets/ticket-${Date.now()}.pdf`);
     const doc = new PDFDocument();
     doc.pipe(fs.createWriteStream(pdfPath));
@@ -68,7 +68,7 @@ router.post('/book', async (req, res) => {
     doc.text(`Total Price: ₹${booking.price}`);
     doc.end();
 
-    // ✅ Send email
+    // Send email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: booking.email,
@@ -84,7 +84,7 @@ router.post('/book', async (req, res) => {
   }
 });
 
-// ✅ Get all user bookings
+// Get all user bookings
 router.get('/', async (req, res) => {
   try {
     const bookings = await Booking.find().populate('venue');

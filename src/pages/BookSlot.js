@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 
 function BookSlot() {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams(); // Venue ID
+
+  // --- STATE ---
   const [slots, setSlots] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
   const [activeSlot, setActiveSlot] = useState(null);
-  const [successBooking, setSuccessBooking] = useState(null);
+
+  // Form State
   const [formData, setFormData] = useState({
     username: localStorage.getItem("username") || "Guest User",
     email: localStorage.getItem("email") || "",
@@ -22,23 +23,22 @@ function BookSlot() {
 
   const minDate = new Date().toISOString().split("T")[0];
 
-  //  Fetch available slots from DB
+  // --- 1. FETCH SLOTS ---
   useEffect(() => {
     const fetchSlots = async () => {
       try {
         setLoading(true);
         setMessage("");
-       const correctDate = new Date(selectedDate).toISOString().split("T")[0];
+        const correctDate = new Date(selectedDate).toISOString().split("T")[0];
 
+        // API Call
         const response = await axios.get(
           `http://localhost:5000/api/slots/${id}?date=${correctDate}`
         );
 
-
-        // If backend returned slots created by admin
         if (response.data.success && Array.isArray(response.data.slots)) {
           if (response.data.slots.length === 0) {
-            setMessage("");
+            setMessage(""); // No error, just empty
             setSlots([]);
           } else {
             setSlots(response.data.slots);
@@ -49,7 +49,7 @@ function BookSlot() {
         }
       } catch (err) {
         console.error(err);
-        setMessage("⚠️ Service currently unavailable for this game.");
+        // Don't show error if it's just 404 (no slots found)
         setSlots([]);
       } finally {
         setLoading(false);
@@ -59,15 +59,22 @@ function BookSlot() {
     fetchSlots();
   }, [id, selectedDate]);
 
-  //  Handle slot click
+  // --- 2. HANDLE SELECTION ---
   const handleSlotClick = (slot) => {
     if (slot.isBooked) return alert("This slot is already booked!");
+    
     const token = localStorage.getItem("token");
-    if (!token) return setMessage("Please login to book a slot.");
+    if (!token) {
+        alert("Please login to book a slot.");
+        navigate("/login");
+        return;
+    }
+    
     setActiveSlot(slot);
+    // Scroll to form (optional UX improvement)
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  //  Form data change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -76,315 +83,398 @@ function BookSlot() {
     }));
   };
 
-  //  Submit booking
- // In the submitBooking function, fix the navigation:
-const submitBooking = async (e) => {
-  e.preventDefault();
-  if (!activeSlot) return setMessage("No slot selected.");
-  if (!formData.email || !formData.phone)
-    return setMessage("Please fill all details before booking.");
+  const handleCancel = () => {
+    setActiveSlot(null);
+  };
 
-  setLoading(true);
-  setMessage("Booking your slot...");
+  // --- 3. SUBMIT BOOKING & NAVIGATE ---
+  const submitBooking = async (e) => {
+    e.preventDefault();
+    if (!activeSlot) return setMessage("No slot selected.");
+    if (!formData.email || !formData.phone) return setMessage("Please fill all details.");
 
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setMessage("Please login to continue.");
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
+    setMessage("Processing booking...");
 
-    const bookingData = {
-      username: formData.username,
-      email: formData.email,
-      venueId: id,               
-      date: selectedDate,
-      time: activeSlot.startTime,
-      people: formData.people,
-      price: activeSlot.price,
-    };
-
-    const response = await axios.post(
-      "http://localhost:5000/api/bookings/book",
-      bookingData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setMessage("Please login to continue.");
+        setLoading(false);
+        return;
       }
-    );
+
+      const bookingData = {
+        username: formData.username,
+        email: formData.email,
+        venueId: id,
+        date: selectedDate,
+        time: activeSlot.startTime,
+        people: formData.people,
+        price: activeSlot.price,
+      };
+
+      const response = await axios.post(
+        "http://localhost:5000/api/bookings/book",
+        bookingData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
     if (response.data.success) {
       const booking = response.data.booking;
       
-      // Navigate to payment with proper booking data
       navigate("/pay", {
         state: {
           bookingData: {
             _id: booking._id,
-            venueName: booking.venueName || "Unknown Venue",
+            venueId: id, 
+            venueName: booking.venueName, 
             date: booking.date,
             time: booking.time,
             price: booking.price,
           }
         }
       });
-    } else {
-      setMessage(response.data.message || "Booking failed.");
+} else {
+        setMessage(response.data.message || "Booking failed.");
+      }
+    } catch (err) {
+      console.error("Booking error:", err);
+      if (err.response?.status === 401) {
+        setMessage("Session expired. Please login again.");
+        localStorage.removeItem("token");
+        navigate("/login");
+      } else {
+        setMessage(err.response?.data?.message || "Failed to book slot.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Booking error:", err);
-    if (err.response?.status === 401) {
-      setMessage("Session expired. Please login again.");
-      localStorage.removeItem("token");
-    } else {
-      setMessage(err.response?.data?.message || "Failed to book slot.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-  const handleCancel = () => {
-    setActiveSlot(null);
   };
 
   return (
-    <main className="book-slot__main">
-      <div className="book-slot__container">
-        <div className="book-slot__card">
-          {/*  Booking Success Screen */}
-          {isBookingConfirmed ? (
-            <div style={successContainerStyle}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 100 100"
-                width="140"
-                height="140"
-                style={{ marginBottom: "1.5rem" }}
-              >
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="#10b981"
-                  strokeWidth="6"
-                  strokeDasharray="283"
-                  strokeDashoffset="283"
-                  style={{ animation: "dash 1s ease-out forwards" }}
-                />
-                <polyline
-                  points="30,53 45,70 75,35"
-                  fill="none"
-                  stroke="#10b981"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ animation: "tick 0.6s ease-out forwards 0.6s" }}
-                />
-                <style>{`
-                  @keyframes dash { to { stroke-dashoffset: 0; } }
-                  @keyframes tick { from { stroke-dashoffset: 50; opacity: 0; } to { stroke-dashoffset: 0; opacity: 1; } }
-                `}</style>
-              </svg>
+    <div style={styles.pageBackground}>
+      <div style={styles.container}>
+        
+        {/* --- LEFT SIDE: DATE & SLOTS --- */}
+        <div style={styles.slotsSection}>
+          <h2 style={styles.sectionTitle}>Select a Slot</h2>
+          
+          <div style={styles.dateContainer}>
+            <label style={styles.label}>Pick a Date:</label>
+            <input
+              type="date"
+              value={selectedDate}
+              min={minDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={styles.dateInput}
+            />
+          </div>
 
-              <h2 style={{ color: "#10b981", fontSize: "1.8rem", marginBottom: "0.5rem" }}>
-                Booking Confirmed! 🎉
-              </h2>
-              <p style={{ color: "#374151", fontSize: "1rem", marginBottom: "1rem" }}>
-                Your slot is successfully booked.
-              </p>
-              <p style={{ color: "#6b7280" }}>
-                A confirmation email with your ticket has been sent to{" "}
-                <strong>{formData.email}</strong>.
-              </p>
-            </div>
-          ) : activeSlot ? (
-            //  Booking Form
-            <div style={formCardStyle}>
-              <h2 style={{ textAlign: "center", color: "#111827" }}>Confirm Booking</h2>
-              <p style={{ textAlign: "center", color: "#6b7280" }}>
-                <strong>Slot:</strong> {activeSlot.startTime} &nbsp; | &nbsp;
-                <strong>Price:</strong> ₹{activeSlot.price}
-              </p>
-              <form onSubmit={submitBooking} style={formStyle}>
-                <div style={inputGroupStyle}>
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    required
-                    style={inputStyle}
-                  />
-                </div>
-                <div style={inputGroupStyle}>
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    style={inputStyle}
-                  />
-                </div>
-                <div style={inputGroupStyle}>
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                    style={inputStyle}
-                  />
-                </div>
-                <div style={inputGroupStyle}>
-                  <label>People</label>
-                  <input
-                    type="number"
-                    name="people"
-                    min={1}
-                    value={formData.people}
-                    onChange={handleChange}
-                    required
-                    style={inputStyle}
-                  />
-                </div>
-                <div style={buttonGroupStyle}>
-                  <button type="submit" style={confirmButtonStyle} disabled={loading}>
-                    {loading ? "Booking..." : "Confirm Booking"}
-                  </button>
-                  <button type="button" style={cancelButtonStyle} onClick={handleCancel}>
-                    Cancel
-                  </button>
-                </div>
-              </form>
+          {loading && !activeSlot ? (
+            <div style={styles.loading}>Loading available slots...</div>
+          ) : slots.length === 0 ? (
+            <div style={styles.noSlots}>
+                <p>⚠️ No slots available for this date.</p>
+                <small>Try selecting a different date.</small>
             </div>
           ) : (
-            //  Show slots or unavailable message
-            <>
-              <h2 className="book-slot__title">Book a Slot</h2>
-              <div className="date-selector">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  min={minDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="date-input"
-                />
-              </div>
-
-              {loading ? (
-                <div className="loading-message">Loading slots...</div>
-              ) : slots.length === 0 ? (
-                <p
-                  className="no-slots-message"
+            <div style={styles.grid}>
+              {slots.map((slot, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSlotClick(slot)}
+                  disabled={slot.isBooked || loading}
                   style={{
-                    color: "#f59e0b",
-                    fontWeight: 500,
-                    textAlign: "center",
-                    marginTop: "1rem",
+                    ...styles.slotButton,
+                    ...(slot.isBooked ? styles.bookedSlot : styles.availableSlot),
+                    ...(activeSlot === slot ? styles.activeSlot : {}),
                   }}
                 >
-                  ⚠️ No slots added yet for this game. Service currently unavailable.
-                </p>
-              ) : (
-                <div className="slots-grid">
-                  {slots.map((slot, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSlotClick(slot)}
-                      disabled={slot.isBooked || loading}
-                      className={`slot-button ${
-                        slot.isBooked
-                          ? "slot-button--booked"
-                          : "slot-button--available"
-                      }`}
-                    >
-                      <div className="slot-time">{slot.displayTime || slot.startTime}</div>
-                      <div className="slot-price">₹{slot.price}</div>
-                      <div className="slot-availability">
-                        {slot.isBooked ? "Booked" : "Available"}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-          {message && (
-            <div
-              className="message-box"
-              style={{
-                color: "#dc2626",
-                textAlign: "center",
-                fontWeight: 500,
-                marginTop: "1rem",
-              }}
-            >
-              {message}
+                  <span style={styles.timeText}>{slot.displayTime || slot.startTime}</span>
+                  <span style={styles.priceText}>₹{slot.price}</span>
+                  <span style={{fontSize: '0.75rem', marginTop: '4px'}}>
+                    {slot.isBooked ? "Booked" : "Available"}
+                  </span>
+                </button>
+              ))}
             </div>
           )}
         </div>
+
+        {/* --- RIGHT SIDE: CONFIRMATION FORM --- */}
+        {activeSlot && (
+            <div style={styles.formSection}>
+              <div style={styles.stickyCard}>
+                <h3 style={styles.formTitle}>Confirm Booking</h3>
+                
+                <div style={styles.summaryBox}>
+                    <p><strong>Date:</strong> {selectedDate}</p>
+                    <p><strong>Time:</strong> {activeSlot.startTime}</p>
+                    <p style={{color: '#4ECDC4', fontSize: '1.2rem', marginTop: '5px'}}>
+                        <strong>Total: ₹{activeSlot.price}</strong>
+                    </p>
+                </div>
+
+                <form onSubmit={submitBooking} style={styles.form}>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Name</label>
+                    <input
+                      type="text"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      required
+                      style={styles.input}
+                    />
+                  </div>
+
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      style={styles.input}
+                    />
+                  </div>
+
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Phone Number</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                      placeholder="e.g. 9876543210"
+                      style={styles.input}
+                    />
+                  </div>
+
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>No. of People</label>
+                    <input
+                      type="number"
+                      name="people"
+                      min="1"
+                      value={formData.people}
+                      onChange={handleChange}
+                      required
+                      style={styles.input}
+                    />
+                  </div>
+
+                  {message && <p style={styles.errorMsg}>{message}</p>}
+
+                  <div style={styles.buttonGroup}>
+                    <button type="button" onClick={handleCancel} style={styles.cancelBtn}>
+                      Cancel
+                    </button>
+                    <button type="submit" disabled={loading} style={styles.submitBtn}>
+                      {loading ? "Processing..." : "Proceed to Pay"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+        )}
+
       </div>
-    </main>
+    </div>
   );
 }
 
-/* 🎨 Styles (same UI) */
-const successContainerStyle = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "4rem 1rem",
-  textAlign: "center",
-  background: "#f9fafb",
-  borderRadius: "12px",
-};
-const formCardStyle = {
-  backgroundColor: "#fff",
-  padding: "2rem",
-  borderRadius: "12px",
-  boxShadow: "0 6px 25px rgba(0,0,0,0.1)",
-  maxWidth: "480px",
-  margin: "0 auto",
-};
-const formStyle = { display: "flex", flexDirection: "column", marginTop: "1.2rem" };
-const inputGroupStyle = { marginBottom: "1rem", display: "flex", flexDirection: "column" };
-const inputStyle = {
-  padding: "10px",
-  borderRadius: "6px",
-  border: "1px solid #d1d5db",
-  fontSize: "1rem",
-};
-const buttonGroupStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  marginTop: "1rem",
-};
-const confirmButtonStyle = {
-  backgroundColor: "#10b981",
-  color: "white",
-  border: "none",
-  padding: "10px 18px",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontWeight: "600",
-};
-const cancelButtonStyle = {
-  backgroundColor: "#ef4444",
-  color: "white",
-  border: "none",
-  padding: "10px 18px",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontWeight: "600",
+// --- INLINE STYLES ---
+const styles = {
+  pageBackground: {
+    backgroundColor: "#f8f9fa",
+    minHeight: "100vh",
+    padding: "40px 20px",
+    fontFamily: "'Segoe UI', sans-serif",
+  },
+  container: {
+    maxWidth: "1100px",
+    margin: "0 auto",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "40px",
+    alignItems: "flex-start",
+  },
+  // Left Side
+  slotsSection: {
+    flex: "2",
+    minWidth: "320px",
+  },
+  sectionTitle: {
+    fontSize: "1.8rem",
+    color: "#333",
+    marginBottom: "20px",
+  },
+  dateContainer: {
+    marginBottom: "20px",
+    backgroundColor: "#fff",
+    padding: "15px",
+    borderRadius: "8px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  dateInput: {
+    padding: "8px 12px",
+    borderRadius: "6px",
+    border: "1px solid #ddd",
+    fontSize: "1rem",
+    color: "#333",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", // Responsive grid
+    gap: "15px",
+  },
+  slotButton: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "15px 10px",
+    borderRadius: "10px",
+    border: "1px solid #eee",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    minHeight: "80px",
+  },
+  availableSlot: {
+    backgroundColor: "#fff",
+    color: "#333",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.05)",
+  },
+  bookedSlot: {
+    backgroundColor: "#e5e7eb",
+    color: "#9ca3af",
+    cursor: "not-allowed",
+    border: "1px solid #e5e7eb",
+  },
+  activeSlot: {
+    backgroundColor: "#007bff",
+    color: "#fff",
+    borderColor: "#007bff",
+    transform: "scale(1.05)",
+    boxShadow: "0 5px 15px rgba(0, 123, 255, 0.3)",
+  },
+  timeText: {
+    fontWeight: "bold",
+    fontSize: "0.95rem",
+    marginBottom: "4px",
+  },
+  priceText: {
+    fontSize: "0.9rem",
+    opacity: 0.9,
+  },
+  noSlots: {
+      textAlign: 'center',
+      padding: '40px',
+      color: '#666',
+      backgroundColor: '#fff',
+      borderRadius: '12px',
+      border: '1px dashed #ccc'
+  },
+  loading: {
+      textAlign: 'center',
+      padding: '20px',
+      color: '#666'
+  },
+
+  // Right Side (Form)
+  formSection: {
+    flex: "1",
+    minWidth: "300px",
+  },
+  stickyCard: {
+    position: "sticky",
+    top: "20px",
+    backgroundColor: "#fff",
+    padding: "25px",
+    borderRadius: "16px",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+  },
+  formTitle: {
+      textAlign: 'center',
+      marginBottom: '20px',
+      color: '#1a1a1a',
+      fontSize: '1.4rem'
+  },
+  summaryBox: {
+      backgroundColor: '#f0f9ff',
+      padding: '15px',
+      borderRadius: '8px',
+      marginBottom: '20px',
+      borderLeft: '4px solid #007bff'
+  },
+  form: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '15px'
+  },
+  inputGroup: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '5px'
+  },
+  label: {
+      fontSize: '0.9rem',
+      fontWeight: '600',
+      color: '#555'
+  },
+  input: {
+      padding: '10px 12px',
+      borderRadius: '6px',
+      border: '1px solid #ddd',
+      fontSize: '1rem',
+      transition: 'border-color 0.2s'
+  },
+  buttonGroup: {
+      display: 'flex',
+      gap: '10px',
+      marginTop: '10px'
+  },
+  submitBtn: {
+      flex: 1,
+      backgroundColor: '#10b981', // Green
+      color: '#fff',
+      border: 'none',
+      padding: '12px',
+      borderRadius: '8px',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      fontSize: '1rem',
+      transition: 'background 0.3s'
+  },
+  cancelBtn: {
+      flex: 1,
+      backgroundColor: '#ef4444', // Red
+      color: '#fff',
+      border: 'none',
+      padding: '12px',
+      borderRadius: '8px',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      fontSize: '1rem'
+  },
+  errorMsg: {
+      color: 'red',
+      fontSize: '0.9rem',
+      textAlign: 'center',
+      margin: 0
+  }
 };
 
 export default BookSlot;
